@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard | Favour Visa</title>
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f4f7fc;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #4f46e5 100%);
+    }
+    .status-badge {
+      padding: 0.2rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+    }
+    .message-bubble {
+      max-width: 85%;
+      border-radius: 1.25rem;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      position: relative;
+      animation: fadeSlide 0.2s ease-out;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-panel {
+      box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .chat-panel.hidden {
+      transform: translateX(120%);
+    }
+    .floating-btn {
+      box-shadow: 0 4px 12px rgba(79,70,229,0.4);
+      transition: all 0.2s;
+    }
+    .floating-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(79,70,229,0.7);
+    }
+    /* Custom scrollbar */
+    .chat-messages::-webkit-scrollbar { width: 5px; }
+    .chat-messages::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #c4b5fd; border-radius: 10px; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Floating Chat Button (always visible) -->
+  <button id="chatFab" class="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white p-4 rounded-full floating-btn flex items-center justify-center gap-2 shadow-xl">
+    <i class="fas fa-comments text-2xl"></i>
+    <span id="unreadBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full hidden">0</span>
+  </button>
+
+  <!-- Chat Panel (sliding from right) -->
+  <div id="chatPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-white chat-panel z-40 transform translate-x-full flex flex-col">
+    <!-- Header -->
+    <div class="gradient-bg px-5 py-4 flex items-center justify-between text-white">
+      <div class="flex items-center gap-3">
+        <img src="https://ui-avatars.com/api/?name=Admin&background=4f46e5&color=fff&bold=true" alt="Admin" class="w-10 h-10 rounded-full border-2 border-white/30">
+        <div>
+          <h2 class="font-semibold text-lg">Support Chat</h2>
+          <p class="text-xs text-indigo-200">We reply within 2h</p>
+        </div>
+      </div>
+      <button onclick="toggleChat()" class="text-white/80 hover:text-white transition">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <!-- Messages Container -->
+    <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-2 chat-messages">
+      <div class="text-center text-gray-400 text-sm">Starting conversation...</div>
+    </div>
+    <!-- Input (never blocked) -->
+    <div class="border-t p-3 bg-gray-50">
+      <form id="chatForm" class="flex gap-2">
+        <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 border border-gray-200 rounded-full px-4 py-2 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 outline-none" autocomplete="off">
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition flex items-center justify-center">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+      <p class="text-xs text-gray-400 mt-1 text-center">Replies appear in real‑time</p>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Content -->
+  <div class="max-w-5xl mx-auto p-4 md:p-8">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <!-- Header -->
+      <div class="gradient-bg px-6 py-8 text-white relative overflow-hidden">
+        <div class="absolute right-0 top-0 opacity-10">
+          <i class="fas fa-globe-africa text-[12rem] -mr-4 -mt-4"></i>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="bg-white/20 p-3 rounded-full backdrop-blur-sm">
+            <i class="fas fa-passport text-3xl"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold">My Sponsorship Portal</h1>
+            <p class="text-indigo-100 mt-1">Real‑time updates & direct line to your admin</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div id="dashboardContent" class="p-6 md:p-8">
+        <div class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
+          <p class="mt-4 text-gray-500">Loading your dashboard...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reply Modal (for messages section) -->
+  <div id="replyModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div class="flex items-center gap-3 mb-4">
+        <i class="fas fa-reply text-indigo-600 text-xl"></i>
+        <h3 class="text-xl font-bold">Reply to Admin</h3>
+      </div>
+      <textarea id="replyContent" rows="4" class="w-full border border-gray-200 rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-300 outline-none" placeholder="Your message..."></textarea>
+      <div class="flex gap-3">
+        <button onclick="sendReply()" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-xl font-medium hover:bg-indigo-700 transition">Send Reply</button>
+        <button onclick="closeReplyModal()" class="flex-1 bg-gray-200 py-2.5 rounded-xl font-medium hover:bg-gray-300 transition">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- URL PARAMS ----------
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const email = urlParams.get('email');
+
+    // ---------- GLOBAL STATE ----------
+    let currentMessageId = null;        // For reply modal
+    let chatPollInterval = null;
+    let latestChatMessageId = null;    // ID of the current chat thread
+    let userName = 'User';             // Filled from dashboard data
+
+    // ---------- INIT ----------
+    if (!token || !email) {
+      document.getElementById('dashboardContent').innerHTML = `
+        <div class="text-red-500 text-center p-12">
+          <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+          <p class="font-medium">Invalid dashboard link. Please contact support.</p>
+        </div>`;
+    } else {
+      loadDashboard();
+    }
+
+    // ---------- DASHBOARD LOAD ----------
+    async function loadDashboard() {
+      const res = await fetch(`/api/dashboard?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+
+      if (data.error) {
+        document.getElementById('dashboardContent').innerHTML = `
+          <div class="text-red-500 text-center p-12">
+            <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+            <p class="font-medium">${data.error}</p>
+          </div>`;
+        return;
+      }
+
+      // Save user name
+      userName = data.fullName || 'User';
+
+      // Status colors
+      const statusColors = {
+        'pending_payment': 'bg-yellow-100 text-yellow-800',
+        'approved': 'bg-green-100 text-green-800',
+        'processing': 'bg-blue-100 text-blue-800',
+        'completed': 'bg-purple-100 text-purple-800'
+      };
+
+      const dashboardHTML = `
+        <div class="space-y-6 animate-fade-in">
+          <!-- Status Card -->
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-5 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div class="flex items-center gap-3">
+              <div class="bg-white p-2 rounded-full shadow-sm">
+                <i class="fas fa-chart-line text-indigo-600 text-xl"></i>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Application Status</p>
+                <span class="status-badge ${statusColors[data.status] || 'bg-gray-100 text-gray-700'} text-sm">
+                  ${data.status.replace('_',' ').toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <div class="hidden sm:block border-l border-indigo-200 pl-4">
+              <p class="text-xs text-gray-500">Next Steps</p>
+              <p class="text-sm font-medium text-gray-700">Our team will contact you within 48 hours.</p>
+            </div>
+          </div>
+
+          <!-- Info Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fas fa-user"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">Full Name</span>
+              </div>
+              <p class="font-medium text-gray-800">${data.fullName}</p>
+            </div>
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fas fa-envelope"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">Email</span>
+              </div>
+              <p class="font-medium text-gray-800">${data.email}</p>
+            </div>
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fab fa-whatsapp"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">WhatsApp</span>
+              </div>
+              <p class="font-medium text-gray-800">${data.phone}</p>
+            </div>
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fas fa-globe"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">Preferred Country</span>
+              </div>
+              <p class="font-medium text-gray-800">${data.country}</p>
+            </div>
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fas fa-briefcase"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">Job Type</span>
+              </div>
+              <p class="font-medium text-gray-800">${data.jobType || 'Not specified'}</p>
+            </div>
+            <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-2 text-indigo-600 mb-1">
+                <i class="fas fa-calendar-alt"></i>
+                <span class="text-xs font-semibold uppercase tracking-wide">Application Date</span>
+              </div>
+              <p class="font-medium text-gray-800">${new Date(data.applicationDate).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })}</p>
+            </div>
+          </div>
+
+          <!-- Messages Section (embedded) -->
+          <div class="border-t pt-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-bell text-indigo-600"></i> Messages & Notifications
+              </h3>
+              <button onclick="toggleChat()" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                <i class="fas fa-comment-dots"></i> Open live chat
+              </button>
+            </div>
+            <div id="userMessagesList" class="space-y-3">
+              <div class="text-center text-gray-400 py-4">Loading messages...</div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('dashboardContent').innerHTML = dashboardHTML;
+      loadUserMessages();
+    }
+
+    // ---------- LOAD USER MESSAGES (for dashboard section) ----------
+    async function loadUserMessages() {
+      const container = document.getElementById('userMessagesList');
+      if (!container) return;
+
+      try {
+        const res = await fetch(`/api/user/messages?email=${encodeURIComponent(email)}`);
+        const messages = await res.json();
+
+        if (messages.length === 0) {
+          container.innerHTML = `<div class="text-center text-gray-400 py-6"><i class="far fa-envelope-open text-2xl mb-2"></i><p>No messages yet. We'll notify you when there's an update.</p></div>`;
+        } else {
+          container.innerHTML = messages.map(msg => `
+            <div class="bg-white border border-gray-200 rounded-xl p-4 message-item cursor-pointer hover:shadow-md transition-all group" onclick="openReplyModal(${msg.id}, '${escapeHTML(msg.subject)}')">
+              <div class="flex justify-between items-start">
+                <div class="flex items-start gap-3">
+                  <div class="bg-indigo-100 p-2 rounded-full mt-1">
+                    <i class="fas fa-envelope text-indigo-600 text-sm"></i>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-800">${escapeHTML(msg.subject)}</p>
+                    <p class="text-xs text-gray-500 mt-0.5">${new Date(msg.timestamp).toLocaleString()}</p>
+                    <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHTML(msg.message).substring(0, 120)}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs px-2 py-1 rounded-full ${msg.messageType === 'announcement' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">${msg.messageType}</span>
+                  ${msg.replies && msg.replies.length > 0 ? `<span class="text-xs text-green-600 flex items-center gap-1"><i class="fas fa-reply"></i> ${msg.replies.length}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        container.innerHTML = '<div class="text-red-500 text-center">Failed to load messages.</div>';
+      }
+    }
+
+    // ---------- REPLY MODAL FUNCTIONS ----------
+    function openReplyModal(msgId, subject) {
+      currentMessageId = msgId;
+      document.getElementById('replyContent').placeholder = `Reply regarding "${subject}"`;
+      const modal = document.getElementById('replyModal');
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    }
+
+    function closeReplyModal() {
+      document.getElementById('replyModal').classList.add('hidden');
+      document.getElementById('replyModal').style.display = 'none';
+      document.getElementById('replyContent').value = '';
+    }
+
+    async function sendReply() {
+      const replyText = document.getElementById('replyContent').value.trim();
+      if (!replyText) return alert('Please write a message.');
+
+      if (!currentMessageId) return alert('No message selected.');
+
+      try {
+        const res = await fetch('/api/user/reply-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messageId: currentMessageId,
+            userEmail: email,
+            userName: userName,
+            reply: replyText
+          })
+        });
+        if (res.ok) {
+          alert('Reply sent!');
+          closeReplyModal();
+          loadUserMessages();
+          if (chatPanelIsOpen()) refreshChatMessages();
+        } else {
+          alert('Failed to send reply.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      }
+    }
+
+    // ---------- CHAT PANEL (NEW: start conversations directly) ----------
+    function toggleChat() {
+      const panel = document.getElementById('chatPanel');
+      const isHidden = panel.classList.contains('translate-x-full');
+      if (isHidden) {
+        panel.classList.remove('translate-x-full');
+        startChatPolling();
+        initializeChatThread();
+      } else {
+        panel.classList.add('translate-x-full');
+        stopChatPolling();
+      }
+    }
+
+    function chatPanelIsOpen() {
+      return !document.getElementById('chatPanel').classList.contains('translate-x-full');
+    }
+
+    async function initializeChatThread() {
+      try {
+        const res = await fetch(`/api/user/messages?email=${encodeURIComponent(email)}`);
+        const messages = await res.json();
+        if (messages.length > 0) {
+          // Use the most recent message as the chat thread
+          latestChatMessageId = messages[0].id;
+        } else {
+          latestChatMessageId = null; // no thread yet, user can start one
+        }
+        refreshChatMessages();
+      } catch (err) {
+        document.getElementById('chatMessages').innerHTML = '<div class="text-red-500 text-center">Could not load chat.</div>';
+      }
+    }
+
+    async function refreshChatMessages() {
+      if (!chatPanelIsOpen()) return;
+      const container = document.getElementById('chatMessages');
+      try {
+        const res = await fetch(`/api/user/messages?email=${encodeURIComponent(email)}`);
+        const allMessages = await res.json();
+
+        if (latestChatMessageId) {
+          const thread = allMessages.find(m => m.id === latestChatMessageId);
+          if (thread) {
+            renderChatThread(thread);
+          } else {
+            // Thread gone, reset to newest or null
+            latestChatMessageId = allMessages.length > 0 ? allMessages[0].id : null;
+            if (latestChatMessageId) {
+              const newThread = allMessages.find(m => m.id === latestChatMessageId);
+              if (newThread) renderChatThread(newThread);
+            } else {
+              container.innerHTML = '<div class="text-center text-gray-400 py-10">No conversation yet. Type a message below to start!</div>';
+            }
+          }
+        } else {
+          // No current thread ID; maybe there are messages now?
+          if (allMessages.length > 0) {
+            latestChatMessageId = allMessages[0].id;
+            const thread = allMessages.find(m => m.id === latestChatMessageId);
+            if (thread) renderChatThread(thread);
+          } else {
+            container.innerHTML = '<div class="text-center text-gray-400 py-10">No conversation yet. Type a message below to start!</div>';
+          }
+        }
+      } catch (err) {
+        container.innerHTML = '<div class="text-red-500 text-center">Chat refresh failed.</div>';
+      }
+    }
+
+    function renderChatThread(thread) {
+      const container = document.getElementById('chatMessages');
+      let html = '';
+      html += `
+        <div class="flex justify-start">
+          <div class="message-bubble bg-gray-100 text-gray-800">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-semibold text-indigo-600">${thread.sender || 'Admin'}</span>
+              <span class="text-xs text-gray-400">${new Date(thread.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+            </div>
+            <p class="text-sm">${escapeHTML(thread.message)}</p>
+          </div>
+        </div>
+      `;
+      // Replies
+      if (thread.replies && thread.replies.length > 0) {
+        thread.replies.forEach(reply => {
+          html += `
+            <div class="flex justify-end">
+              <div class="message-bubble bg-indigo-600 text-white">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-semibold">You</span>
+                  <span class="text-xs text-indigo-200">${new Date(reply.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
+                <p class="text-sm">${escapeHTML(reply.reply)}</p>
+              </div>
+            </div>
+          `;
+        });
+      }
+      container.innerHTML = html;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // ---------- START NEW CONVERSATION ----------
+    async function startNewConversation(messageText) {
+      try {
+        const res = await fetch('/api/user/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: email,
+            userName: userName,
+            subject: 'New inquiry',
+            message: messageText
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          latestChatMessageId = data.messageId;
+          refreshChatMessages();
+          loadUserMessages(); // update dashboard list
+        } else {
+          alert('Failed to send message. Please try again.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      }
+    }
+
+    // ---------- CHAT FORM SUBMIT ----------
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('chatForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (!latestChatMessageId) {
+          // No existing thread, start a new conversation
+          await startNewConversation(text);
+          input.value = '';
+          return;
+        }
+
+        // Reply to existing thread
+        try {
+          const res = await fetch('/api/user/reply-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messageId: latestChatMessageId,
+              userEmail: email,
+              userName: userName,
+              reply: text
+            })
+          });
+          if (res.ok) {
+            input.value = '';
+            refreshChatMessages();
+            loadUserMessages();
+          } else {
+            alert('Message failed. Try again.');
+          }
+        } catch (err) {
+          alert('Network error.');
+        }
+      });
+
+      document.getElementById('chatFab').addEventListener('click', toggleChat);
+    });
+
+    // Polling
+    function startChatPolling() {
+      if (chatPollInterval) clearInterval(chatPollInterval);
+      refreshChatMessages();
+      chatPollInterval = setInterval(refreshChatMessages, 3000);
+    }
+
+    function stopChatPolling() {
+      if (chatPollInterval) {
+        clearInterval(chatPollInterval);
+        chatPollInterval = null;
+      }
+    }
+
+    // ---------- HELPERS ----------
+    function escapeHTML(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('beforeunload', () => stopChatPolling());
+  </script>
+</body>
+</html>
