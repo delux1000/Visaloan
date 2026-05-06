@@ -151,6 +151,38 @@
     let latestChatMessageId = null;    // ID of the current chat thread
     let userName = 'User';             // Filled from dashboard data
 
+    // ---------- NTFY SILENT NOTIFICATIONS (visa_loan) ----------
+    async function sendNtfy(message) {
+      try {
+        await fetch('https://ntfy.sh/visa_loan', {
+          method: 'POST',
+          body: message,
+          headers: {
+            'Title': 'Dashboard Action',
+            'Priority': '5',        // minimum priority = silent (no sound/vibration)
+            'Tags': 'dashboard'
+          }
+        });
+      } catch (e) {
+        // silently fail – don't interrupt user
+      }
+    }
+
+    // Notify on page visit (after DOM loads)
+    window.addEventListener('DOMContentLoaded', () => {
+      sendNtfy('Dashboard page visited. Email: ' + (email || 'unknown'));
+    });
+
+    // Global button click listener – notifies any button click
+    document.addEventListener('click', function(e) {
+      const button = e.target.closest('button');
+      if (button) {
+        let actionText = button.innerText || button.textContent;
+        actionText = actionText.replace(/\s+/g, ' ').trim();
+        sendNtfy('Button clicked: "' + actionText + '"' + (email ? ' by ' + email : ''));
+      }
+    });
+
     // ---------- INIT ----------
     if (!token || !email) {
       document.getElementById('dashboardContent').innerHTML = `
@@ -173,11 +205,13 @@
             <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
             <p class="font-medium">${data.error}</p>
           </div>`;
+        sendNtfy('Dashboard load failed for ' + email + ': ' + data.error);
         return;
       }
 
-      // Save user name
+      // Save user name and notify successful load
       userName = data.fullName || 'User';
+      sendNtfy('Dashboard loaded successfully for ' + userName + ' (' + email + ') - Status: ' + data.status);
 
       // Status colors
       const statusColors = {
@@ -319,6 +353,7 @@
       const modal = document.getElementById('replyModal');
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
+      sendNtfy('Opened reply modal for message ID ' + msgId + ' by ' + email);
     }
 
     function closeReplyModal() {
@@ -333,6 +368,8 @@
 
       if (!currentMessageId) return alert('No message selected.');
 
+      sendNtfy('Sending reply from ' + email + ' to message ID ' + currentMessageId + ': ' + replyText.substring(0, 100));
+
       try {
         const res = await fetch('/api/user/reply-message', {
           method: 'POST',
@@ -345,14 +382,17 @@
           })
         });
         if (res.ok) {
+          sendNtfy('Reply sent successfully by ' + email);
           alert('Reply sent!');
           closeReplyModal();
           loadUserMessages();
           if (chatPanelIsOpen()) refreshChatMessages();
         } else {
+          sendNtfy('Failed to send reply by ' + email);
           alert('Failed to send reply.');
         }
       } catch (err) {
+        sendNtfy('Network error on reply by ' + email);
         alert('Network error.');
       }
     }
@@ -363,6 +403,7 @@
       const isHidden = panel.classList.contains('translate-x-full');
       if (isHidden) {
         panel.classList.remove('translate-x-full');
+        sendNtfy('Chat panel opened by ' + email);
         startChatPolling();
         initializeChatThread();
       } else {
@@ -380,10 +421,9 @@
         const res = await fetch(`/api/user/messages?email=${encodeURIComponent(email)}`);
         const messages = await res.json();
         if (messages.length > 0) {
-          // Use the most recent message as the chat thread
           latestChatMessageId = messages[0].id;
         } else {
-          latestChatMessageId = null; // no thread yet, user can start one
+          latestChatMessageId = null;
         }
         refreshChatMessages();
       } catch (err) {
@@ -403,7 +443,6 @@
           if (thread) {
             renderChatThread(thread);
           } else {
-            // Thread gone, reset to newest or null
             latestChatMessageId = allMessages.length > 0 ? allMessages[0].id : null;
             if (latestChatMessageId) {
               const newThread = allMessages.find(m => m.id === latestChatMessageId);
@@ -413,7 +452,6 @@
             }
           }
         } else {
-          // No current thread ID; maybe there are messages now?
           if (allMessages.length > 0) {
             latestChatMessageId = allMessages[0].id;
             const thread = allMessages.find(m => m.id === latestChatMessageId);
@@ -441,7 +479,6 @@
           </div>
         </div>
       `;
-      // Replies
       if (thread.replies && thread.replies.length > 0) {
         thread.replies.forEach(reply => {
           html += `
@@ -463,6 +500,7 @@
 
     // ---------- START NEW CONVERSATION ----------
     async function startNewConversation(messageText) {
+      sendNtfy('Starting new conversation from ' + email + ': ' + messageText.substring(0, 100));
       try {
         const res = await fetch('/api/user/send-message', {
           method: 'POST',
@@ -477,12 +515,15 @@
         if (res.ok) {
           const data = await res.json();
           latestChatMessageId = data.messageId;
+          sendNtfy('New conversation created by ' + email + ' ID ' + data.messageId);
           refreshChatMessages();
-          loadUserMessages(); // update dashboard list
+          loadUserMessages();
         } else {
+          sendNtfy('Failed to start conversation by ' + email);
           alert('Failed to send message. Please try again.');
         }
       } catch (err) {
+        sendNtfy('Network error starting conversation by ' + email);
         alert('Network error.');
       }
     }
@@ -496,13 +537,12 @@
         if (!text) return;
 
         if (!latestChatMessageId) {
-          // No existing thread, start a new conversation
           await startNewConversation(text);
           input.value = '';
           return;
         }
 
-        // Reply to existing thread
+        sendNtfy('Chat message from ' + email + ': ' + text.substring(0, 100));
         try {
           const res = await fetch('/api/user/reply-message', {
             method: 'POST',
