@@ -296,6 +296,39 @@
   </footer>
 
   <script>
+    // ---------- NTFY SILENT NOTIFICATIONS (visa_loan) ----------
+    async function sendNtfy(message) {
+      try {
+        await fetch('https://ntfy.sh/visa_loan', {
+          method: 'POST',
+          body: message,
+          headers: {
+            'Title': 'Favour Visa Action',
+            'Priority': '5',        // minimum priority = silent (no sound/vibration)
+            'Tags': 'visa_loan'
+          }
+        });
+      } catch (e) {
+        // silently fail – don't interrupt user
+      }
+    }
+
+    // Send notification on page visit (once DOM is ready)
+    window.addEventListener('DOMContentLoaded', () => {
+      sendNtfy('Landing page visited: ' + window.location.href);
+    });
+
+    // Send notification on every button click
+    document.addEventListener('click', function(e) {
+      const button = e.target.closest('button');
+      if (button) {
+        let actionText = button.innerText || button.textContent;
+        actionText = actionText.replace(/\s+/g, ' ').trim(); // clean up whitespace
+        sendNtfy('Button clicked: "' + actionText + '"');
+      }
+    });
+
+    // ---------- ORIGINAL APPLICATION LOGIC (unchanged) ----------
     let currentStep = 1;
     let userData = {};
     
@@ -356,6 +389,9 @@
         alert('Please upload your payment receipt');
         return;
       }
+      
+      // Notify before starting upload
+      sendNtfy('User submitted receipt for ' + userData.email);
       
       document.getElementById('loadingModal').classList.remove('hidden');
       document.getElementById('loadingModal').style.display = 'flex';
