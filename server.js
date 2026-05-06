@@ -8,7 +8,7 @@ const app = express();
 const PORT = 8080;
 
 // -------- JSONBIN.IO CONFIGURATION ----------
-const JSONBIN_BIN_ID = '69f16490856a68218984fb7e';
+const JSONBIN_BIN_ID = '69fb1c9f856a682189b1fa90';
 const JSONBIN_ACCESS_KEY = '$2a$10$ArZphpxn9dQsIKONyzHFZ.rx4ChwP5Jnm6YiM1ZPMECPTfdPBTmdu';
 const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 const JSONBIN_HEADERS = {
