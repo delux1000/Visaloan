@@ -96,8 +96,8 @@ async function updateBinData(data) {
 })();
 
 // --------- ADMIN CREDENTIALS ----------
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'favourvisa2025';
+const ADMIN_USER = 'visaloan';
+const ADMIN_PASS = '338989';
 
 // --------- USER ENDPOINTS ----------
 
