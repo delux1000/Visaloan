@@ -64,27 +64,8 @@
 </head>
 <body class="bg-gray-100">
 
-  <!-- Login Section -->
-  <div id="loginSection" class="min-h-screen flex items-center justify-center px-4">
-    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
-      <div class="text-center mb-6">
-        <div class="bg-gradient-to-br from-indigo-600 to-purple-600 w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-lg">
-          <i class="fas fa-shield-alt text-3xl text-white"></i>
-        </div>
-        <h2 class="text-2xl font-bold mt-4 text-gray-800">Admin Portal</h2>
-        <p class="text-gray-500 text-sm">Favour Visa Management System</p>
-      </div>
-      <div class="space-y-4">
-        <input type="text" id="adminUsername" placeholder="Username" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 outline-none">
-        <input type="password" id="adminPassword" placeholder="Password" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-300 outline-none">
-        <button onclick="adminLogin()" class="w-full gradient-bg text-white py-3 rounded-xl font-bold hover:opacity-90 transition">Sign In</button>
-        <p class="text-xs text-gray-400 text-center">Default: admin / favourvisa2025</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dashboard Section -->
-  <div id="dashboardSection" class="hidden">
+  <!-- Dashboard Section (visible immediately) -->
+  <div id="dashboardSection">
     <div class="flex h-screen">
       <!-- Sidebar -->
       <div class="w-72 gradient-bg text-white flex flex-col fixed h-full z-20 shadow-2xl">
@@ -362,9 +343,9 @@
   <div id="toast" class="toast hidden bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg"></div>
 
   <script>
-    // ================= STATE =================
-    let adminToken = null;
-    let currentAdmin = null;
+    // ================= STATE (auto-authenticated) =================
+    let adminToken = 'admin-token-2025';  // hardcoded valid token
+    let currentAdmin = 'Admin';           // default admin name
     let applicationsData = [];
     let messagesData = [];
     let currentUserId = null;
@@ -384,36 +365,21 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    // ================= LOGIN / LOGOUT =================
-    async function adminLogin() {
-      const username = document.getElementById('adminUsername').value.trim();
-      const password = document.getElementById('adminPassword').value.trim();
-      if (!username || !password) return showToast('Please enter credentials', 'error');
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        adminToken = data.token;
-        currentAdmin = username;
-        document.getElementById('adminNameDisplay').innerHTML = `<i class="fas fa-user-circle"></i> ${username}`;
-        document.getElementById('loginSection').classList.add('hidden');
-        document.getElementById('dashboardSection').classList.remove('hidden');
-        showSection('overview');
-        loadAllData();
-        setInterval(loadAllData, 30000); // refresh every 30s
-      } else {
-        showToast('Invalid credentials', 'error');
-      }
-    }
+    // ================= INIT (skip login, load immediately) =================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set admin display
+      document.getElementById('adminNameDisplay').innerHTML = `<i class="fas fa-user-circle"></i> ${currentAdmin}`;
+      // Show dashboard section explicitly (no login section ever)
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      showSection('overview');
+      loadAllData();
+      setInterval(loadAllData, 30000); // refresh every 30s
+    });
 
     function logout() {
-      adminToken = null;
-      stopChatPolling();
-      document.getElementById('dashboardSection').classList.add('hidden');
-      document.getElementById('loginSection').classList.remove('hidden');
+      // Simply reload the page (no real security)
+      location.reload();
+      // Alternatively, you could reset token, but since there's no login, just reload.
     }
 
     // ================= SECTION NAVIGATION =================
@@ -437,7 +403,7 @@
       if (!adminToken) return;
       await loadStats();
       await loadApplications();
-      await loadMessages(); // needed for chat as well
+      await loadMessages();
       await loadLogs();
     }
 
@@ -470,7 +436,6 @@
           </div>
         </div>
       `;
-      // Charts
       if (window.trendChart) window.trendChart.destroy();
       if (window.statusChart) window.statusChart.destroy();
       const ctx1 = document.getElementById('trendChart')?.getContext('2d');
@@ -689,7 +654,6 @@
     }
 
     function buildChatUserList(search = '') {
-      // Combine users from applicationsData and any email from messagesData
       const allEmails = new Set(applicationsData.map(u => u.email));
       messagesData.forEach(m => m.userIds.forEach(id => { if (id !== 'all') allEmails.add(id); }));
       const userList = Array.from(allEmails).map(email => {
@@ -715,12 +679,10 @@
 
     async function refreshChatMessages() {
       if (!currentChatUserEmail) return;
-      // fetch all messages and filter for the selected user
       const res = await fetch('/api/admin/messages', { headers: { 'Authorization':`Bearer ${adminToken}` } });
       const allMsgs = await res.json();
-      messagesData = allMsgs; // update global
+      messagesData = allMsgs;
       const userMsgs = allMsgs.filter(m => m.userIds.includes(currentChatUserEmail));
-      // Flatten into conversation timeline: each message + its replies
       const timeline = [];
       userMsgs.forEach(m => {
         timeline.push({
@@ -765,7 +727,6 @@
       }
     }
 
-    // Send a new message to the current chat user
     async function sendChatMessage(text) {
       if (!currentChatUserEmail || !text.trim()) return;
       await fetch('/api/admin/send-message', {
@@ -781,7 +742,6 @@
       refreshChatMessages();
     }
 
-    // Polling
     function startChatPolling() {
       buildChatUserList();
       if (currentChatUserEmail) refreshChatMessages();
@@ -802,7 +762,6 @@
       }
     }
 
-    // Chat form handler
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('chatForm').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -846,7 +805,7 @@
       document.getElementById('userDetailModal').style.display = 'none';
     }
 
-    // Extra event listeners for search/filter in applications
+    // Extra event listeners
     document.getElementById('searchInput')?.addEventListener('input', filterApplications);
     document.getElementById('statusFilter')?.addEventListener('change', filterApplications);
   </script>
