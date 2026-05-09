@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Favour Visa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .sidebar { transition: all 0.3s; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
+    .card-hover { transition: all 0.3s; }
+    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -12px rgba(0,0,0,0.2); }
+    .modal { transition: all 0.3s; }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <!-- Login Section -->
+  <div id="loginSection" class="min-h-screen flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div class="text-center mb-6">
+        <i class="fas fa-shield-alt text-5xl text-indigo-600"></i>
+        <h2 class="text-2xl font-bold mt-3">Admin Portal</h2>
+        <p class="text-gray-500 text-sm">Favour Visa Management System</p>
+      </div>
+      <input type="text" id="adminUsername" placeholder="Username" class="w-full border border-gray-300 rounded-xl p-3 mb-4">
+      <input type="password" id="adminPassword" placeholder="Password" class="w-full border border-gray-300 rounded-xl p-3 mb-4">
+      <button onclick="adminLogin()" class="w-full gradient-bg text-white py-3 rounded-xl font-bold hover:opacity-90 transition">Login</button>
+      <p class="text-xs text-gray-400 text-center mt-4">Demo: admin / favourvisa2025</p>
+    </div>
+  </div>
+
+  <!-- Dashboard Section -->
+  <div id="dashboardSection" class="hidden">
+    <!-- Sidebar -->
+    <div class="flex h-screen">
+      <div class="w-72 gradient-bg text-white flex flex-col fixed h-full z-20">
+        <div class="p-6 border-b border-white/20">
+          <div class="flex items-center gap-3">
+            <i class="fas fa-passport text-2xl"></i>
+            <span class="font-bold text-xl">Favour Visa Admin</span>
+          </div>
+          <p class="text-xs text-white/70 mt-2">Management Dashboard</p>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-2">
+          <button onclick="showSection('overview')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-white/10 transition">
+            <i class="fas fa-chart-line w-5"></i> <span>Overview</span>
+          </button>
+          <button onclick="showSection('applications')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-white/10 transition">
+            <i class="fas fa-users w-5"></i> <span>Applications</span>
+          </button>
+          <button onclick="showSection('messages')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-white/10 transition">
+            <i class="fas fa-envelope w-5"></i> <span>Messages</span>
+          </button>
+          <button onclick="showSection('logs')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-white/10 transition">
+            <i class="fas fa-history w-5"></i> <span>Activity Logs</span>
+          </button>
+          <button onclick="showSection('settings')" class="nav-item w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-white/10 transition">
+            <i class="fas fa-cog w-5"></i> <span>Settings</span>
+          </button>
+        </nav>
+        
+        <div class="p-4 border-t border-white/20">
+          <div class="flex items-center justify-between">
+            <span class="text-sm" id="adminName">Admin</span>
+            <button onclick="logout()" class="px-3 py-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 ml-72">
+        <div class="p-8">
+          <!-- Overview Section -->
+          <div id="overviewSection" class="section-content">
+            <h2 class="text-2xl font-bold mb-6">Dashboard Overview</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="statsCards">
+              <!-- Stats loaded dynamically -->
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+              <div class="bg-white rounded-2xl p-6 shadow-lg">
+                <h3 class="font-bold text-lg mb-4">Applications Trend</h3>
+                <canvas id="trendChart" height="200"></canvas>
+              </div>
+              <div class="bg-white rounded-2xl p-6 shadow-lg">
+                <h3 class="font-bold text-lg mb-4">Status Distribution</h3>
+                <canvas id="statusChart" height="200"></canvas>
+              </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 class="font-bold text-lg mb-4">Recent Applications</h3>
+              <div id="recentApps" class="space-y-3"></div>
+            </div>
+          </div>
+
+          <!-- Applications Section -->
+          <div id="applicationsSection" class="section-content hidden">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-bold">Manage Applications</h2>
+              <div class="flex gap-3">
+                <input type="text" id="searchInput" placeholder="Search by name or email..." class="border rounded-xl px-4 py-2">
+                <select id="statusFilter" class="border rounded-xl px-4 py-2">
+                  <option value="all">All Status</option>
+                  <option value="pending_payment">Pending Payment</option>
+                  <option value="approved">Approved</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                </select>
+                <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700">
+                  <i class="fas fa-download"></i> Export
+                </button>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-800 text-white">
+                    <tr>
+                      <th class="px-4 py-3 text-left">ID</th>
+                      <th class="px-4 py-3 text-left">Name</th>
+                      <th class="px-4 py-3 text-left">Email</th>
+                      <th class="px-4 py-3 text-left">Phone</th>
+                      <th class="px-4 py-3 text-left">Country</th>
+                      <th class="px-4 py-3 text-left">Status</th>
+                      <th class="px-4 py-3 text-left">Receipt</th>
+                      <th class="px-4 py-3 text-left">Portal Link</th>
+                      <th class="px-4 py-3 text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="applicationsTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages Section -->
+          <div id="messagesSection" class="section-content hidden">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-bold">Message Center</h2>
+              <button onclick="openMessageModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700">
+                <i class="fas fa-plus"></i> New Message
+              </button>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-6">
+              <div class="md:col-span-1">
+                <div class="bg-white rounded-2xl p-4 shadow-lg">
+                  <h3 class="font-bold mb-3">Conversations</h3>
+                  <div id="messageList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                </div>
+              </div>
+              <div class="md:col-span-2">
+                <div class="bg-white rounded-2xl p-6 shadow-lg">
+                  <div id="messageDetail" class="min-h-96">
+                    <p class="text-gray-400 text-center">Select a message to view replies</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logs Section -->
+          <div id="logsSection" class="section-content hidden">
+            <h2 class="text-2xl font-bold mb-6">Activity Logs</h2>
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+              <div class="overflow-x-auto max-h-96">
+                <table class="w-full">
+                  <thead class="bg-gray-800 text-white sticky top-0">
+                    <tr>
+                      <th class="px-4 py-3 text-left">Time</th>
+                      <th class="px-4 py-3 text-left">Action</th>
+                      <th class="px-4 py-3 text-left">Admin</th>
+                      <th class="px-4 py-3 text-left">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logsTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settings Section -->
+          <div id="settingsSection" class="section-content hidden">
+            <h2 class="text-2xl font-bold mb-6">System Settings</h2>
+            <div class="bg-white rounded-2xl p-6 shadow-lg">
+              <div class="mb-6">
+                <h3 class="font-bold text-lg mb-3">Change Admin Password</h3>
+                <input type="password" id="newPassword" placeholder="New Password" class="border rounded-xl p-3 w-full mb-3">
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" class="border rounded-xl p-3 w-full mb-3">
+                <button onclick="changePassword()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl">Update Password</button>
+              </div>
+              <div class="border-t pt-6">
+                <h3 class="font-bold text-lg mb-3 text-red-600">Danger Zone</h3>
+                <button onclick="clearAllData()" class="bg-red-600 text-white px-6 py-2 rounded-xl">Clear All Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Modal -->
+  <div id="messageModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl max-w-2xl w-full mx-4 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Send Message to Users</h3>
+        <button onclick="closeMessageModal()" class="text-2xl">&times;</button>
+      </div>
+      <select id="messageRecipients" multiple class="w-full border rounded-xl p-3 mb-3">
+        <option value="all">All Users</option>
+      </select>
+      <input type="text" id="messageSubject" placeholder="Subject" class="w-full border rounded-xl p-3 mb-3">
+      <textarea id="messageContent" rows="5" placeholder="Message content..." class="w-full border rounded-xl p-3 mb-3"></textarea>
+      <select id="messageType" class="w-full border rounded-xl p-3 mb-3">
+        <option value="announcement">Announcement</option>
+        <option value="reminder">Reminder</option>
+        <option value="update">Status Update</option>
+      </select>
+      <button onclick="sendMessage()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold">Send Message</button>
+    </div>
+  </div>
+
+  <!-- User Detail Modal -->
+  <div id="userDetailModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl max-w-2xl w-full mx-4 p-6 max-h-96 overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">User Details</h3>
+        <button onclick="closeUserModal()" class="text-2xl">&times;</button>
+      </div>
+      <div id="userDetailsContent"></div>
+      <div class="mt-4">
+        <textarea id="userNote" rows="3" placeholder="Add private note..." class="w-full border rounded-xl p-3"></textarea>
+        <button onclick="addUserNote()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-xl">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Portal Link Modal -->
+  <div id="portalLinkModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl max-w-lg w-full mx-4 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">User Portal Access Link</h3>
+        <button onclick="closePortalModal()" class="text-2xl">&times;</button>
+      </div>
+      <div id="portalLinkContent" class="space-y-4">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <p class="text-sm text-gray-600 mb-2">Share this link with the user:</p>
+          <div class="flex gap-2">
+            <input type="text" id="portalLinkInput" readonly class="flex-1 border rounded-lg p-2 text-sm bg-white">
+            <button onclick="copyPortalLink()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+              <i class="fas fa-copy"></i> Copy
+            </button>
+          </div>
+        </div>
+        <div class="bg-yellow-50 p-3 rounded-lg">
+          <p class="text-xs text-yellow-800"><i class="fas fa-info-circle"></i> This link gives the user access to their dashboard. Keep it secure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg"></div>
+
+  <script>
+    let adminToken = null;
+    let currentAdmin = null;
+    let applicationsData = [];
+    let currentUserId = null;
+    let chart1, chart2;
+
+    async function adminLogin() {
+      const username = document.getElementById('adminUsername').value;
+      const password = document.getElementById('adminPassword').value;
+      
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      
+      if(res.ok) {
+        const data = await res.json();
+        adminToken = data.token;
+        currentAdmin = username;
+        document.getElementById('adminName').innerHTML = `<i class="fas fa-user-circle"></i> ${username}`;
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('dashboardSection').classList.remove('hidden');
+        showSection('overview');
+        loadAllData();
+        setInterval(loadAllData, 30000);
+      } else {
+        showToast('Invalid credentials', 'error');
+      }
+    }
+
+    async function loadAllData() {
+      await loadStats();
+      await loadApplications();
+      await loadMessages();
+      await loadLogs();
+    }
+
+    async function loadStats() {
+      const res = await fetch('/api/admin/stats', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const stats = await res.json();
+      
+      document.getElementById('statsCards').innerHTML = `
+        <div class="bg-white rounded-2xl p-6 shadow-lg card-hover"><div class="flex justify-between"><div><p class="text-gray-500">Total Apps</p><p class="text-3xl font-bold">${stats.total}</p></div><i class="fas fa-users text-4xl text-indigo-400"></i></div></div>
+        <div class="bg-white rounded-2xl p-6 shadow-lg card-hover"><div class="flex justify-between"><div><p class="text-gray-500">Pending</p><p class="text-3xl font-bold text-yellow-600">${stats.pending}</p></div><i class="fas fa-clock text-4xl text-yellow-400"></i></div></div>
+        <div class="bg-white rounded-2xl p-6 shadow-lg card-hover"><div class="flex justify-between"><div><p class="text-gray-500">Approved</p><p class="text-3xl font-bold text-green-600">${stats.approved}</p></div><i class="fas fa-check-circle text-4xl text-green-400"></i></div></div>
+        <div class="bg-white rounded-2xl p-6 shadow-lg card-hover"><div class="flex justify-between"><div><p class="text-gray-500">Revenue</p><p class="text-3xl font-bold text-blue-600">₦${stats.revenue.toLocaleString()}</p></div><i class="fas fa-money-bill-wave text-4xl text-blue-400"></i></div></div>
+      `;
+      
+      if(chart1) chart1.destroy();
+      if(chart2) chart2.destroy();
+      
+      const ctx1 = document.getElementById('trendChart').getContext('2d');
+      chart1 = new Chart(ctx1, {
+        type: 'line',
+        data: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], datasets: [{ label: 'Applications', data: [12, 19, 15, stats.total], borderColor: '#667eea', tension: 0.4 }] }
+      });
+      
+      const ctx2 = document.getElementById('statusChart').getContext('2d');
+      chart2 = new Chart(ctx2, {
+        type: 'doughnut',
+        data: { labels: ['Pending', 'Approved', 'Processing', 'Completed'], datasets: [{ data: [stats.pending, stats.approved, stats.processing, stats.completed], backgroundColor: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'] }] }
+      });
+      
+      const recentHtml = stats.recentApplications.map(app => `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg"><div><p class="font-medium">${app.fullName}</p><p class="text-sm text-gray-500">${app.email}</p></div><span class="px-2 py-1 rounded-full text-xs ${app.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${app.status}</span></div>
+      `).join('');
+      document.getElementById('recentApps').innerHTML = recentHtml || '<p class="text-gray-400">No applications yet</p>';
+    }
+
+    async function loadApplications() {
+      const res = await fetch('/api/admin/applications', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      applicationsData = await res.json();
+      filterApplications();
+    }
+
+    function filterApplications() {
+      const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+      const status = document.getElementById('statusFilter')?.value || 'all';
+      
+      let filtered = applicationsData;
+      if(search) filtered = filtered.filter(app => app.fullName.toLowerCase().includes(search) || app.email.toLowerCase().includes(search));
+      if(status !== 'all') filtered = filtered.filter(app => app.status === status);
+      
+      const tbody = document.getElementById('applicationsTable');
+      tbody.innerHTML = filtered.map((app, index) => {
+        const portalLink = `${window.location.protocol}//${window.location.host}/dashboard?token=${app.portalToken}&email=${encodeURIComponent(app.email)}`;
+        return `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3">${index+1}</td>
+          <td class="px-4 py-3 font-medium">${app.fullName}</td>
+          <td class="px-4 py-3">${app.email}</td>
+          <td class="px-4 py-3">${app.phone}</td>
+          <td class="px-4 py-3">${app.country}</td>
+          <td class="px-4 py-3">
+            <select onchange="updateStatus(${app.id}, this.value)" class="text-sm px-2 py-1 rounded ${app.status === 'approved' ? 'bg-green-100 text-green-700' : app.status === 'pending_payment' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">
+              <option value="pending_payment" ${app.status === 'pending_payment' ? 'selected' : ''}>Pending Payment</option>
+              <option value="approved" ${app.status === 'approved' ? 'selected' : ''}>Approved</option>
+              <option value="processing" ${app.status === 'processing' ? 'selected' : ''}>Processing Visa</option>
+              <option value="completed" ${app.status === 'completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          </td>
+          <td class="px-4 py-3">${app.receiptPath ? `<a href="${app.receiptPath}" target="_blank" class="text-blue-600"><i class="fas fa-eye"></i> View</a>` : 'No receipt'}</td>
+          <td class="px-4 py-3">
+            <button onclick="viewPortalLink('${portalLink}', '${app.fullName}')" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-purple-700">
+              <i class="fas fa-link"></i> Get Link
+            </button>
+          </td>
+          <td class="px-4 py-3">
+            <button onclick="viewUserDetails(${app.id})" class="text-indigo-600 mr-2"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteUser(${app.id})" class="text-red-600"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `}).join('');
+    }
+
+    function viewPortalLink(link, userName) {
+      document.getElementById('portalLinkInput').value = link;
+      document.getElementById('portalLinkModal').classList.remove('hidden');
+      document.getElementById('portalLinkModal').style.display = 'flex';
+      showToast(`Portal link for ${userName} ready to copy`, 'success');
+    }
+
+    function copyPortalLink() {
+      const linkInput = document.getElementById('portalLinkInput');
+      linkInput.select();
+      document.execCommand('copy');
+      showToast('Portal link copied to clipboard!', 'success');
+    }
+
+    function closePortalModal() {
+      document.getElementById('portalLinkModal').classList.add('hidden');
+      document.getElementById('portalLinkModal').style.display = 'none';
+    }
+
+    async function updateStatus(id, status) {
+      await fetch('/api/admin/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({ id, status, adminName: currentAdmin })
+      });
+      showToast('Status updated successfully', 'success');
+      loadApplications();
+      loadStats();
+    }
+
+    async function viewUserDetails(id) {
+      currentUserId = id;
+      const user = applicationsData.find(u => u.id === id);
+      document.getElementById('userDetailsContent').innerHTML = `
+        <div class="space-y-2"><p><strong>Name:</strong> ${user.fullName}</p><p><strong>Email:</strong> ${user.email}</p><p><strong>Phone:</strong> ${user.phone}</p><p><strong>Country:</strong> ${user.country}</p><p><strong>Job:</strong> ${user.jobType}</p><p><strong>Status:</strong> ${user.status}</p><p><strong>Applied:</strong> ${new Date(user.timestamp).toLocaleString()}</p><p><strong>Payment Date:</strong> ${user.paymentDate ? new Date(user.paymentDate).toLocaleString() : 'Pending'}</p>${user.notes ? `<div class="mt-4"><strong>Notes:</strong><ul>${user.notes.map(n => `<li class="text-sm">${n.note} - <em>${n.admin}</em> (${new Date(n.timestamp).toLocaleString()})</li>`).join('')}</ul></div>` : ''}</div>
+      `;
+      document.getElementById('userDetailModal').classList.remove('hidden');
+      document.getElementById('userDetailModal').style.display = 'flex';
+    }
+
+    async function addUserNote() {
+      const note = document.getElementById('userNote').value;
+      if(!note) return;
+      await fetch('/api/admin/add-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({ id: currentUserId, note, adminName: currentAdmin })
+      });
+      showToast('Note added', 'success');
+      document.getElementById('userNote').value = '';
+      viewUserDetails(currentUserId);
+    }
+
+    async function deleteUser(id) {
+      if(confirm('Are you sure? This action cannot be undone.')) {
+        await fetch('/api/admin/delete-user', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+          body: JSON.stringify({ id, adminName: currentAdmin })
+        });
+        showToast('User deleted', 'success');
+        loadApplications();
+        loadStats();
+      }
+    }
+
+    async function loadMessages() {
+      const res = await fetch('/api/admin/messages', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const messages = await res.json();
+      const messageList = document.getElementById('messageList');
+      messageList.innerHTML = messages.map(m => `
+        <div class="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100" onclick="viewMessageDetail(${m.id})">
+          <p class="font-medium text-sm">${m.subject}</p>
+          <p class="text-xs text-gray-500">${new Date(m.timestamp).toLocaleString()}</p>
+          <span class="text-xs ${m.messageType === 'announcement' ? 'text-purple-600' : 'text-blue-600'}">${m.messageType}</span>
+        </div>
+      `).join('');
+    }
+
+    function viewMessageDetail(id) {}
+
+    function openMessageModal() {
+      document.getElementById('messageModal').classList.remove('hidden');
+      document.getElementById('messageModal').style.display = 'flex';
+      const select = document.getElementById('messageRecipients');
+      select.innerHTML = '<option value="all">All Users</option>' + applicationsData.map(u => `<option value="${u.email}">${u.fullName} (${u.email})</option>`).join('');
+    }
+
+    async function sendMessage() {
+      const recipients = Array.from(document.getElementById('messageRecipients').selectedOptions).map(opt => opt.value);
+      const subject = document.getElementById('messageSubject').value;
+      const content = document.getElementById('messageContent').value;
+      const type = document.getElementById('messageType').value;
+      
+      if(!subject || !content) { showToast('Please fill all fields', 'error'); return; }
+      
+      await fetch('/api/admin/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+        body: JSON.stringify({ userIds: recipients, subject, message: content, sender: currentAdmin, messageType: type })
+      });
+      showToast('Message sent successfully', 'success');
+      closeMessageModal();
+      loadMessages();
+    }
+
+    async function loadLogs() {
+      const res = await fetch('/api/admin/logs', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const logs = await res.json();
+      const tbody = document.getElementById('logsTable');
+      tbody.innerHTML = logs.slice(0, 100).map(log => `
+        <tr class="border-b">
+          <td class="px-4 py-3 text-sm">${new Date(log.timestamp).toLocaleString()}</td>
+          <td class="px-4 py-3 text-sm">${log.action}</td>
+          <td class="px-4 py-3 text-sm">${log.admin}</td>
+          <td class="px-4 py-3 text-sm">${log.details}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function exportData() {
+      const res = await fetch('/api/admin/export', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `favourvisa_export_${new Date().toISOString()}.json`;
+      a.click();
+      showToast('Export complete', 'success');
+    }
+
+    function changePassword() { showToast('Password update feature coming soon', 'info'); }
+    function clearAllData() { if(confirm('This will delete ALL data!')) showToast('Feature coming soon', 'info'); }
+    function closeMessageModal() { document.getElementById('messageModal').classList.add('hidden'); document.getElementById('messageModal').style.display = 'none'; }
+    function closeUserModal() { document.getElementById('userDetailModal').classList.add('hidden'); document.getElementById('userDetailModal').style.display = 'none'; }
+    
+    function showSection(section) {
+      ['overview', 'applications', 'messages', 'logs', 'settings'].forEach(s => {
+        document.getElementById(s + 'Section').classList.add('hidden');
+      });
+      document.getElementById(section + 'Section').classList.remove('hidden');
+      if(section === 'applications') loadApplications();
+      if(section === 'messages') loadMessages();
+      if(section === 'logs') loadLogs();
+    }
+
+    function showToast(message, type) {
+      const toast = document.getElementById('toast');
+      toast.className = `toast ${type === 'error' ? 'bg-red-500' : 'bg-green-500'} text-white px-6 py-3 rounded-lg shadow-lg`;
+      toast.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'} mr-2"></i>${message}`;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    function logout() {
+      adminToken = null;
+      document.getElementById('dashboardSection').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+    }
+
+    document.getElementById('searchInput')?.addEventListener('input', filterApplications);
+    document.getElementById('statusFilter')?.addEventListener('change', filterApplications);
+  </script>
+</body>
+</html>
